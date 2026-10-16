@@ -10,7 +10,7 @@ namespace RaceDayAPI.Controllers
     [ApiController]
     [Route("api")]
     public class EnrolmentsController : ControllerBase
-    {
+    {//start of class
         private readonly EnrolmentService _enrolmentService;
 
         public EnrolmentsController(EnrolmentService enrolmentService)
@@ -130,6 +130,6 @@ namespace RaceDayAPI.Controllers
                 message = "Enrolment cancelled successfully."
             });
         }
-    }
-}
+    }//end of class
+}//end of namespace
 
