@@ -6,7 +6,7 @@ using RaceDayAPI.DTOs;
 using RaceDayAPI.Services;
 
 namespace RaceDayAPI.Controllers
-{
+{//start of namespace
     [ApiController]
     [Route("api")]
     public class EnrolmentsController : ControllerBase
