@@ -1,6 +1,6 @@
 ﻿
 namespace RaceDayAPI.Models
-{
+{//start of namespace
     public class Result
     {
         public int ResultID { get; set; }
