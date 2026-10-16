@@ -9,7 +9,7 @@ namespace RaceDayAPI.Controllers
     [ApiController]
     [Route("api")]
     public class CategoriesController : ControllerBase
-    {
+    {//start of class
         private readonly CategoryService _categoryService;
 
         public CategoriesController(CategoryService categoryService)
@@ -63,6 +63,6 @@ namespace RaceDayAPI.Controllers
                 categoryID
             });
         }
-    }
-}
+    }//end of class
+}//end of namespace
 
