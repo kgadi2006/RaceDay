@@ -1,5 +1,5 @@
 ﻿namespace RaceDayAPI.DTOs
-{//start of namespace
+{//start of the namespace
     public class EventRequest
     {//start of class
         public int EventTypeID { get; set; }
