@@ -130,6 +130,24 @@ namespace RaceDayAPI.Controllers
                 message = "Enrolment cancelled successfully."
             });
         }
+        // Get enrolments for the logged-in Organizer
+        [Authorize(Roles = "Organizer")]
+        [HttpGet("organizer/enrolments")]
+        public IActionResult GetOrganizerEnrolments()
+        {
+            string? userID = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userID, out int organizerID))
+            {
+                return Unauthorized();
+            }
+
+            var enrolments = _enrolmentService.GetOrganizerEnrolments(
+                organizerID);
+
+            return Ok(enrolments);
+        }
     }
 }
 

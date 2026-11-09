@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using RaceDayAPI.Data;
 using RaceDayAPI.DTOs;
 using RaceDayAPI.Models;
@@ -101,6 +100,81 @@ namespace RaceDayAPI.Services
             command.Parameters.AddWithValue("@ParticipantID", participantID);
 
             return command.ExecuteNonQuery() > 0;
+        }
+
+        // Get enrolments and results for events belonging to an Organizer
+        public List<OrganizerEnrolmentResponse> GetOrganizerEnrolments(int organizerID)
+        {
+            List<OrganizerEnrolmentResponse> enrolments =
+                new List<OrganizerEnrolmentResponse>();
+
+            using SqlConnection connection = _database.GetConnection();
+            connection.Open();
+
+            string query = @"
+                SELECT
+                    ee.EnrolmentID,
+                    ee.EventID,
+                    u.FullName AS ParticipantName,
+                    u.Email AS ParticipantEmail,
+                    e.EventName,
+                    c.CategoryName,
+                    c.CategoryType,
+                    c.CategoryValue,
+                    ee.EnrolmentDate,
+                    r.ResultID,
+                    r.FinishTime,
+                    r.FinishingPosition
+                FROM EventEnrolments ee
+                INNER JOIN Events e
+                    ON ee.EventID = e.EventID
+                INNER JOIN Userss u
+                    ON ee.ParticipantID = u.UserID
+                INNER JOIN Categories c
+                    ON ee.CategoryID = c.CategoryID
+                LEFT JOIN Results r
+                    ON ee.EnrolmentID = r.EnrolmentID
+                WHERE e.OrganizerID = @OrganizerID
+                ORDER BY ee.EnrolmentDate DESC";
+
+            using SqlCommand command = new SqlCommand(query, connection);
+
+            command.Parameters.AddWithValue("@OrganizerID", organizerID);
+
+            using SqlDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                enrolments.Add(new OrganizerEnrolmentResponse
+                {
+                    EnrolmentID = (int)reader["EnrolmentID"],
+                    EventID = (int)reader["EventID"],
+
+                    ParticipantName = reader["ParticipantName"].ToString()!,
+                    ParticipantEmail = reader["ParticipantEmail"].ToString()!,
+                    EventName = reader["EventName"].ToString()!,
+
+                    CategoryName = reader["CategoryName"].ToString()!,
+                    CategoryType = reader["CategoryType"].ToString()!,
+                    CategoryValue = reader["CategoryValue"].ToString()!,
+
+                    EnrolmentDate = (DateTime)reader["EnrolmentDate"],
+
+                    ResultID = reader["ResultID"] == DBNull.Value
+                        ? null
+                        : (int?)reader["ResultID"],
+
+                    FinishTime = reader["FinishTime"] == DBNull.Value
+                        ? null
+                        : (TimeSpan?)reader["FinishTime"],
+
+                    FinishingPosition = reader["FinishingPosition"] == DBNull.Value
+                        ? null
+                        : (int?)reader["FinishingPosition"]
+                });
+            }
+
+            return enrolments;
         }
     }
 }

@@ -18,6 +18,7 @@ namespace RaceDayAPI.Controllers
             _resultService = resultService;
         }
 
+        // Get results for a specific event
         [HttpGet("events/{eventID}/results")]
         public IActionResult GetEventResults(int eventID)
         {
@@ -32,6 +33,7 @@ namespace RaceDayAPI.Controllers
             return Ok(_resultService.GetEventResults(eventID));
         }
 
+        // Get results for the logged-in Participant
         [Authorize(Roles = "Participant")]
         [HttpGet("results/me")]
         public IActionResult GetMyResults()
@@ -47,6 +49,7 @@ namespace RaceDayAPI.Controllers
             return Ok(_resultService.GetMyResults(participantID));
         }
 
+        // Create a result
         [Authorize(Roles = "Organizer")]
         [HttpPost("events/{eventID}/results")]
         public IActionResult CreateResult(
@@ -64,9 +67,23 @@ namespace RaceDayAPI.Controllers
                 });
             }
 
+            string? userID = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userID, out int organizerID))
+            {
+                return Unauthorized();
+            }
+
             try
             {
-                int resultID = _resultService.CreateResult(request);
+                int resultID = _resultService.CreateResult(
+                    eventID, organizerID, request);
+
+                if (resultID == 0)
+                {
+                    return Forbid();
+                }
 
                 return StatusCode(201, new
                 {
@@ -84,9 +101,12 @@ namespace RaceDayAPI.Controllers
             }
         }
 
+        // Update an existing result
         [Authorize(Roles = "Organizer")]
         [HttpPut("results/{id}")]
-        public IActionResult UpdateResult(int id, ResultRequest request)
+        public IActionResult UpdateResult(
+            int id,
+            ResultRequest request)
         {
             if (id <= 0 ||
                 request.EnrolmentID <= 0 ||
@@ -99,13 +119,22 @@ namespace RaceDayAPI.Controllers
                 });
             }
 
-            bool updated = _resultService.UpdateResult(id, request);
+            string? userID = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userID, out int organizerID))
+            {
+                return Unauthorized();
+            }
+
+            bool updated = _resultService.UpdateResult(
+                id, organizerID, request);
 
             if (!updated)
             {
                 return NotFound(new
                 {
-                    message = "Result not found."
+                    message = "Result not found or you do not have permission to update it."
                 });
             }
 
@@ -116,5 +145,3 @@ namespace RaceDayAPI.Controllers
         }
     }
 }
-
-

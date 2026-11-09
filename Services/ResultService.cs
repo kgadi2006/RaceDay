@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using RaceDayAPI.Data;
 using RaceDayAPI.DTOs;
 using RaceDayAPI.Models;
@@ -15,6 +14,7 @@ namespace RaceDayAPI.Services
             _database = database;
         }
 
+        // Get results for a specific event
         public List<Result> GetEventResults(int eventID)
         {
             List<Result> results = new List<Result>();
@@ -50,6 +50,7 @@ namespace RaceDayAPI.Services
             return results;
         }
 
+        // Get results belonging to a specific Participant
         public List<Result> GetMyResults(int participantID)
         {
             List<Result> results = new List<Result>();
@@ -85,7 +86,11 @@ namespace RaceDayAPI.Services
             return results;
         }
 
-        public int CreateResult(ResultRequest request)
+        // Create a result only if the Organizer owns the event
+        public int CreateResult(
+            int eventID,
+            int organizerID,
+            ResultRequest request)
         {
             using SqlConnection connection = _database.GetConnection();
             connection.Open();
@@ -93,8 +98,20 @@ namespace RaceDayAPI.Services
             string query = @"
                 INSERT INTO Results
                 (EnrolmentID, FinishTime, FinishingPosition)
-                VALUES
-                (@EnrolmentID, @FinishTime, @FinishingPosition);
+
+                SELECT
+                    ee.EnrolmentID,
+                    @FinishTime,
+                    @FinishingPosition
+
+                FROM EventEnrolments ee
+
+                INNER JOIN Events e
+                    ON ee.EventID = e.EventID
+
+                WHERE ee.EnrolmentID = @EnrolmentID
+                AND ee.EventID = @EventID
+                AND e.OrganizerID = @OrganizerID;
 
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
@@ -102,33 +119,68 @@ namespace RaceDayAPI.Services
 
             command.Parameters.AddWithValue(
                 "@EnrolmentID", request.EnrolmentID);
+
+            command.Parameters.AddWithValue(
+                "@EventID", eventID);
+
+            command.Parameters.AddWithValue(
+                "@OrganizerID", organizerID);
+
             command.Parameters.AddWithValue(
                 "@FinishTime", request.FinishTime);
+
             command.Parameters.AddWithValue(
                 "@FinishingPosition", request.FinishingPosition);
 
-            return (int)command.ExecuteScalar()!;
+            object? result = command.ExecuteScalar();
+
+            if (result == null || result == DBNull.Value)
+            {
+                return 0;
+            }
+
+            return Convert.ToInt32(result);
         }
 
-        public bool UpdateResult(int resultID, ResultRequest request)
+        // Update a result only if the Organizer owns its event
+        public bool UpdateResult(
+            int resultID,
+            int organizerID,
+            ResultRequest request)
         {
             using SqlConnection connection = _database.GetConnection();
             connection.Open();
 
             string query = @"
-                UPDATE Results
-                SET FinishTime = @FinishTime,
-                    FinishingPosition = @FinishingPosition
-                WHERE ResultID = @ResultID
-                AND EnrolmentID = @EnrolmentID";
+                UPDATE r
+                SET r.FinishTime = @FinishTime,
+                    r.FinishingPosition = @FinishingPosition
+
+                FROM Results r
+
+                INNER JOIN EventEnrolments ee
+                    ON r.EnrolmentID = ee.EnrolmentID
+
+                INNER JOIN Events e
+                    ON ee.EventID = e.EventID
+
+                WHERE r.ResultID = @ResultID
+                AND r.EnrolmentID = @EnrolmentID
+                AND e.OrganizerID = @OrganizerID";
 
             using SqlCommand command = new SqlCommand(query, connection);
 
             command.Parameters.AddWithValue("@ResultID", resultID);
+
             command.Parameters.AddWithValue(
                 "@EnrolmentID", request.EnrolmentID);
+
+            command.Parameters.AddWithValue(
+                "@OrganizerID", organizerID);
+
             command.Parameters.AddWithValue(
                 "@FinishTime", request.FinishTime);
+
             command.Parameters.AddWithValue(
                 "@FinishingPosition", request.FinishingPosition);
 
