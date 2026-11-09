@@ -52,4 +52,4 @@ GitHub Actions automatically builds the solution and runs the unit tests when co
 The latest workflow run completed successfully.
 
 ## Project Video
-[Watch the RaceDay project video](https://youtu.be/Ks6Jkt5nFBE?si=mTvM0u4JGGPOG4WD)
+https://youtu.be/vp7EyI5AK4w?si=zWSi8wevtbe-NvPq
