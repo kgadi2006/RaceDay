@@ -3,9 +3,10 @@ name: RaceDay Build and Tests
 
 on:
   push:
-    branches: ["**"]
+    branches: [ "RaceDay_part3" ]
+
   pull_request:
-    branches: ["**"]
+    branches: [ "RaceDay_part3" ]
 
 jobs:
   build-and-test:
