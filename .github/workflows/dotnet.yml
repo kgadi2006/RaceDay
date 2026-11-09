@@ -3,9 +3,12 @@ name: RaceDay Build and Tests
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ "RaceDay_part 3" ]
+
   pull_request:
-    branches: [ "**" ]
+    branches: [ "RaceDay_part 3" ]
+
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -15,16 +18,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore RaceDay.sln
+        run: |
+          find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" -print0 | while IFS= read -r -d '' project; do
+            echo "Restoring $project"
+            dotnet restore "$project"
+          done
 
-      - name: Build solution
-        run: dotnet build RaceDay.sln --configuration Release --no-restore
+      - name: Build projects
+        run: |
+          find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" -print0 | while IFS= read -r -d '' project; do
+            echo "Building $project"
+            dotnet build "$project" --configuration Release --no-restore
+          done
 
-      - name: Run tests
-        run: dotnet test RaceDay.sln --configuration Release --no-build
+      - name: Run unit tests
+        run: |
+          find . -name "*Tests.csproj" -not -path "*/obj/*" -not -path "*/bin/*" -print0 | while IFS= read -r -d '' project; do
+            echo "Testing $project"
+            dotnet test "$project" --configuration Release --no-build --verbosity normal
+          done
